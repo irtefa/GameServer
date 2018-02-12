@@ -1,24 +1,17 @@
 use std::net::{TcpListener, TcpStream};
-use std::io::Read;
-use std::io::Write;
+use std::io::{BufReader, BufRead, Write};
+use std::thread;
 
-fn handle_stream(mut stream: TcpStream) {
-    let mut buf = String::new();
-    
-    match stream.read_to_string(&mut buf) {
-        Ok(_) => {
-            println!("Reading fine {}", buf);
-        }
-        Err(e) => {
-            println!("Error Reading: {}", e);
-        }
-    }
-    println!("Reading: {:?}",buf.trim());
-    
-    match stream.write(buf.as_bytes()) {
-        Ok(_) => {println!("Writing: {}", buf)}
-        Err(e) => {
-            println!("Error Writing : {}", e);
+fn handle_stream(stream: TcpStream) {
+    let mut stream = BufReader::new(stream);
+    loop {
+        let mut buf = String::new();
+        match stream.read_line(&mut buf) {
+            Ok(_) => {
+                println!("Reading: {}", buf.trim());
+                stream.get_ref().write(buf.as_bytes()).unwrap();
+            }
+            Err(_) => break,
         }
     }
 }
@@ -31,7 +24,9 @@ fn main() {
         match stream {
             Ok(stream) => {
                 println!("New connection!");
-                handle_stream(stream);
+                thread::spawn(move || {
+                    handle_stream(stream);
+                });
             }
             Err(e) => { println!("Connection failed {:?}", e); }
         }
