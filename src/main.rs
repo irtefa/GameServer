@@ -9,9 +9,15 @@ fn handle_stream(stream: TcpStream) {
         match stream.read_line(&mut buf) {
             Ok(_) => {
                 println!("Reading: {}", buf.trim());
-                stream.get_ref().write(buf.as_bytes()).unwrap();
+                match stream.get_ref().write(buf.as_bytes()) {
+                    Ok(_) => {},
+                    Err(e) => {
+                        println!("Error Writing: {}", e);
+                        break;
+                    },
+                }
             }
-            Err(_) => break,
+            Err(e) => println!("Error Reading: {}", e),
         }
     }
 }
